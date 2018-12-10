@@ -8,7 +8,7 @@ function criarLevelState() {
 	sounds.gen();
 	createModals();
 	//gerando o bg
-	game.add.sprite(0, 0, 'backgroundNormal');
+	game.add.image(0, 0, 'backgroundNormal');
 
 	game.sound.stopAll();
 	sounds.play('musicajogo');
@@ -16,13 +16,13 @@ function criarLevelState() {
 		sounds.play('musicajogo');
 	}, 78000);
 
-	var logo = game.add.sprite(game.world.centerX + 90, game.world.centerY - 70, 'logoGrande');
+	var logo = game.add.image(game.world.centerX + 90, game.world.centerY - 70, 'logoGrande');
 	logo.enableBody = true;
 	logo.anchor.x = 0.5;
 	logo.anchor.y = 0.5;
 	logo.scale.setTo(1.3, 1.3);
 
-	var logoEditora = game.add.sprite(880, 60, 'logoEditora');
+	var logoEditora = game.add.image(880, 60, 'logoEditora');
 	logoEditora.enableBody = true;
 	logoEditora.anchor.x = 0.5;
 	logoEditora.anchor.y = 0.5;
@@ -43,7 +43,12 @@ function criarLevelState() {
 	btnSom.anchor.y = 0.5;
 	btnSom.scale.setTo(0.8, 0.8);
 
-	btnJogar = game.add.button(game.world.centerX + 80, 540, 'btnJogar', function(){
+	btnProcura = game.add.image(game.world.centerX + 80, 540, 'btnProcura');
+	btnProcura.anchor.x = 0.5;
+	btnProcura.anchor.y = 0.5;
+	btnProcura.scale.setTo(1, 1);
+
+	btnJogar = game.add.button(game.world.centerX + 80, 640, 'btnJogar', function(){
 		game.state.start('jogo');
 	});
 	btnJogar.anchor.x = 0.5;

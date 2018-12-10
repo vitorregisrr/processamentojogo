@@ -9,7 +9,7 @@ var sounds = {
             this.musicajogo = game.add.audio('musicajogo');
             this.parabens = game.add.audio('parabens');
             this.quepena = game.add.audio('quepena');
-            this.cliqueinstrucoes = game.add.audio('cliqueinstrucoes');
+            this.ultimafase = game.add.audio('ultimafase');
         }
     },
 
@@ -21,8 +21,8 @@ var sounds = {
                     this.encaixe.play();
                     break;
 
-                case 'cliqueinstrucoes':
-                    this.cliqueinstrucoes.play();
+                case 'ultimafase':
+                    this.ultimafase.play();
                     break;
 
                 case 'musicajogo':

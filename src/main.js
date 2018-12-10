@@ -113331,7 +113331,7 @@ var sounds = {
             this.musicajogo = game.add.audio('musicajogo');
             this.parabens = game.add.audio('parabens');
             this.quepena = game.add.audio('quepena');
-            this.cliqueinstrucoes = game.add.audio('cliqueinstrucoes');
+            this.ultimafase = game.add.audio('ultimafase');
         }
     },
 
@@ -113343,8 +113343,8 @@ var sounds = {
                     this.encaixe.play();
                     break;
 
-                case 'cliqueinstrucoes':
-                    this.cliqueinstrucoes.play();
+                case 'ultimafase':
+                    this.ultimafase.play();
                     break;
 
                 case 'musicajogo':
@@ -114662,8 +114662,8 @@ function createModals() {
                     placeholders.destroy();
                     respostas.alpha = 0;
                     respostas.destroy();
-                    novaRodada(true);
                     acertos++;
+                    novaRodada(true);
                     textoAcertos.setText(acertos);
                     sounds.play('cliqueinstrucoes');
                 }
@@ -114691,9 +114691,7 @@ function createModals() {
                 callback: function () {
                     game.paused = false;
                     reg.modal.hideModal("nivelSuccess");
-                    background.frame = 0;
                     game.state.start('levelState');
-                    sounds.play('cliqueinstrucoes');
                 }
             },
             {
@@ -114767,6 +114765,7 @@ function showNivelSuccessModal() {
     reg.modal.showModal("nivelSuccess");
     reg.modal.updateModalValue(acertos, 'nivelSuccess', 5);
     reg.modal.updateModalValue(erros, 'nivelSuccess', 4);
+    sounds.play('ultimafase');
 }
 
 function showGameSucessModal() {
@@ -114793,19 +114792,19 @@ function novaRodada(venceu) {
     }
 }
 function createGameUI() {
-	logoEditora = game.add.sprite(860, 730, 'logoEditora');
+	logoEditora = game.add.image(860, 730, 'logoEditora');
 	logoEditora.enableBody = true;
 	logoEditora.anchor.x = 0.5;
 	logoEditora.anchor.y = 0.5;
     logoEditora.scale.setTo(1.1, 1.1);
     
-    logoJogo = game.add.sprite(840, 120, 'logoGrande');
+    logoJogo = game.add.image(840, 120, 'logoGrande');
 	logoJogo.enableBody = true;
 	logoJogo.anchor.x = 0.5;
 	logoJogo.anchor.y = 0.5;
     logoJogo.scale.setTo(0.6, 0.6);
     
-    estatisticas = game.add.sprite(840, 362, 'estatisticas');
+    estatisticas = game.add.image(840, 362, 'estatisticas');
 	estatisticas.enableBody = true;
 	estatisticas.anchor.x = 0.5;
     estatisticas.anchor.y = 0.5;
@@ -114965,7 +114964,6 @@ function precarregarPreload() {
     game.load.image('estatisticas', 'assets/estatisticas.png');
     game.load.image('fundopecas', 'assets/fundopecas.png');
     game.load.image('personagem', 'assets/personagem.png');
-    game.load.image('btnJogar', 'assets/btnJogar.png');
 
     game.load.image('grupo1_entrada', 'assets/grupo1_entrada.png');
     game.load.image('grupo1_processamento', 'assets/grupo1_processamento.png');
@@ -115035,11 +115033,14 @@ function precarregarPreload() {
     game.load.image('grupo15_saida', 'assets/grupo15_saida.png');
 
     game.load.image('placeholder', 'assets/placeholder.png');
+    game.load.image('btnJogar', 'assets/btnJogar.png');
+    game.load.image('btnProcura', 'assets/btnProcura.png');
 
     game.load.audio('encaixe',['assets/sounds/encaixe.ogg', 'assets/sounds/encaixe.mp3']);
     game.load.audio('quepena',['assets/sounds/quepena.ogg', 'assets/sounds/quepena.mp3']);
     game.load.audio('parabens',['assets/sounds/parabens.ogg', 'assets/sounds/parabens.mp3']);
     game.load.audio('musicajogo',['assets/sounds/musicajogo.ogg', 'assets/sounds/musicajogo.mp3']);
+    game.load.audio('ultimafase',['assets/sounds/ultimafase.ogg', 'assets/sounds/ultimafase.mp3']);
 }
 
 
@@ -115070,7 +115071,7 @@ function criarLevelState() {
 	sounds.gen();
 	createModals();
 	//gerando o bg
-	game.add.sprite(0, 0, 'backgroundNormal');
+	game.add.image(0, 0, 'backgroundNormal');
 
 	game.sound.stopAll();
 	sounds.play('musicajogo');
@@ -115078,13 +115079,13 @@ function criarLevelState() {
 		sounds.play('musicajogo');
 	}, 78000);
 
-	var logo = game.add.sprite(game.world.centerX + 90, game.world.centerY - 70, 'logoGrande');
+	var logo = game.add.image(game.world.centerX + 90, game.world.centerY - 70, 'logoGrande');
 	logo.enableBody = true;
 	logo.anchor.x = 0.5;
 	logo.anchor.y = 0.5;
 	logo.scale.setTo(1.3, 1.3);
 
-	var logoEditora = game.add.sprite(880, 60, 'logoEditora');
+	var logoEditora = game.add.image(880, 60, 'logoEditora');
 	logoEditora.enableBody = true;
 	logoEditora.anchor.x = 0.5;
 	logoEditora.anchor.y = 0.5;
@@ -115105,7 +115106,12 @@ function criarLevelState() {
 	btnSom.anchor.y = 0.5;
 	btnSom.scale.setTo(0.8, 0.8);
 
-	btnJogar = game.add.button(game.world.centerX + 80, 540, 'btnJogar', function(){
+	btnProcura = game.add.image(game.world.centerX + 80, 540, 'btnProcura');
+	btnProcura.anchor.x = 0.5;
+	btnProcura.anchor.y = 0.5;
+	btnProcura.scale.setTo(1, 1);
+
+	btnJogar = game.add.button(game.world.centerX + 80, 640, 'btnJogar', function(){
 		game.state.start('jogo');
 	});
 	btnJogar.anchor.x = 0.5;

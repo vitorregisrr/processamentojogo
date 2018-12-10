@@ -45,7 +45,6 @@ function precarregarPreload() {
     game.load.image('estatisticas', 'assets/estatisticas.png');
     game.load.image('fundopecas', 'assets/fundopecas.png');
     game.load.image('personagem', 'assets/personagem.png');
-    game.load.image('btnJogar', 'assets/btnJogar.png');
 
     game.load.image('grupo1_entrada', 'assets/grupo1_entrada.png');
     game.load.image('grupo1_processamento', 'assets/grupo1_processamento.png');
@@ -115,11 +114,14 @@ function precarregarPreload() {
     game.load.image('grupo15_saida', 'assets/grupo15_saida.png');
 
     game.load.image('placeholder', 'assets/placeholder.png');
+    game.load.image('btnJogar', 'assets/btnJogar.png');
+    game.load.image('btnProcura', 'assets/btnProcura.png');
 
     game.load.audio('encaixe',['assets/sounds/encaixe.ogg', 'assets/sounds/encaixe.mp3']);
     game.load.audio('quepena',['assets/sounds/quepena.ogg', 'assets/sounds/quepena.mp3']);
     game.load.audio('parabens',['assets/sounds/parabens.ogg', 'assets/sounds/parabens.mp3']);
     game.load.audio('musicajogo',['assets/sounds/musicajogo.ogg', 'assets/sounds/musicajogo.mp3']);
+    game.load.audio('ultimafase',['assets/sounds/ultimafase.ogg', 'assets/sounds/ultimafase.mp3']);
 }
 
 

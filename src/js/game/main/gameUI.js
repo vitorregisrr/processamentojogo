@@ -1,17 +1,17 @@
 function createGameUI() {
-	logoEditora = game.add.sprite(860, 730, 'logoEditora');
+	logoEditora = game.add.image(860, 730, 'logoEditora');
 	logoEditora.enableBody = true;
 	logoEditora.anchor.x = 0.5;
 	logoEditora.anchor.y = 0.5;
     logoEditora.scale.setTo(1.1, 1.1);
     
-    logoJogo = game.add.sprite(840, 120, 'logoGrande');
+    logoJogo = game.add.image(840, 120, 'logoGrande');
 	logoJogo.enableBody = true;
 	logoJogo.anchor.x = 0.5;
 	logoJogo.anchor.y = 0.5;
     logoJogo.scale.setTo(0.6, 0.6);
     
-    estatisticas = game.add.sprite(840, 362, 'estatisticas');
+    estatisticas = game.add.image(840, 362, 'estatisticas');
 	estatisticas.enableBody = true;
 	estatisticas.anchor.x = 0.5;
     estatisticas.anchor.y = 0.5;

@@ -56,8 +56,8 @@ function createModals() {
                     placeholders.destroy();
                     respostas.alpha = 0;
                     respostas.destroy();
-                    novaRodada(true);
                     acertos++;
+                    novaRodada(true);
                     textoAcertos.setText(acertos);
                     sounds.play('cliqueinstrucoes');
                 }
@@ -85,9 +85,7 @@ function createModals() {
                 callback: function () {
                     game.paused = false;
                     reg.modal.hideModal("nivelSuccess");
-                    background.frame = 0;
                     game.state.start('levelState');
-                    sounds.play('cliqueinstrucoes');
                 }
             },
             {
@@ -161,6 +159,7 @@ function showNivelSuccessModal() {
     reg.modal.showModal("nivelSuccess");
     reg.modal.updateModalValue(acertos, 'nivelSuccess', 5);
     reg.modal.updateModalValue(erros, 'nivelSuccess', 4);
+    sounds.play('ultimafase');
 }
 
 function showGameSucessModal() {
