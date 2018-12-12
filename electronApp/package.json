@@ -21,7 +21,8 @@
         {
           "name": "@electron-forge/maker-squirrel",
           "config": {
-            "name": "electronapp"
+          "name": "electronapp",
+          "loadingGif": "assets/icon.png"
           }
         },
         {
@@ -39,6 +40,16 @@
           "config": {}
         }
       ]
+    },
+    
+    "electronWinstallerConfig": {
+      "name": "Processa Dados",
+      "loadingGif": "src/assets/loading.gif",
+      "setupIcon": "src/assets/icon.png"
+    },
+
+    "electronPackagerConfig": {
+      "icon": "src/assets/icon.png"
     }
   },
   "dependencies": {

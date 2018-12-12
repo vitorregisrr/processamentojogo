@@ -113073,3 +113073,2123 @@ PIXI.canUseNewCanvasBlendModes = function ()
 /*
 * "What matters in this life is not what we do but what we do for others, the legacy we leave and the imprint we make." - Eric Meyer
 */
+
+var sfxJson = {
+  "resources": [
+    "sprite.ogg",
+    "sprite.m4a",
+    "sprite.mp3",
+    "sprite.ac3"
+  ],
+  "spritemap": {
+    "cliqueinstrucoes": {
+      "start": 0,
+      "end": 0.1306122448979592,
+      "loop": false
+    },
+    "cronometro": {
+      "start": 2,
+      "end": 12.489229024943311,
+      "loop": false
+    },
+    "encaixado": {
+      "start": 14,
+      "end": 14.365714285714287,
+      "loop": false
+    },
+    "final10s": {
+      "start": 16,
+      "end": 18.168163265306124,
+      "loop": false
+    },
+    "musicainstrucoes": {
+      "start": 20,
+      "end": 40.924081632653056,
+      "loop": false
+    },
+    "musicajogo": {
+      "start": 42,
+      "end": 214.01632653061225,
+      "loop": false
+    },
+    "parabenscompletou": {
+      "start": 216,
+      "end": 219.55265306122448,
+      "loop": false
+    },
+    "quepena": {
+      "start": 221,
+      "end": 221.2873469387755,
+      "loop": false
+    },
+    "ultima_fase": {
+      "start": 223,
+      "end": 225.16816326530613,
+      "loop": false
+    }
+  }
+}
+var arrayCombinacoes =  ['entrada', 'processamento', 'saida'];
+var arrayRodadas = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+
+function shuffle(array) {
+    var currentIndex = array.length, temporaryValue, randomIndex;
+  
+    while (0 !== currentIndex) {
+  
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex -= 1;
+  
+      temporaryValue = array[currentIndex];
+      array[currentIndex] = array[randomIndex];
+      array[randomIndex] = temporaryValue;
+    }
+  
+    return array;
+  } 
+function pecaSolta(peca) {
+    var overlap = checkPlaceholderOverlap(peca);
+
+    if (overlap && !overlap.peca) {
+        sounds.play('encaixe');
+        placeholders.forEach(function (placeholder) {
+            if (placeholder.peca == peca) {
+                placeholder.peca = undefined;
+                rodada.entradaArr[placeholder.posicao] = undefined;
+            }
+        });
+
+        if (overlap.peca) {
+            overlap.peca.x = posPecas[overlap.peca.posicao][0];
+            overlap.peca.y = posPecas[overlap.peca.posicao][1];
+            overlap.peca = peca;
+        }
+
+        peca.x = overlap.x;
+        peca.y = overlap.y;
+        overlap.peca = peca;
+        rodada.entradaArr[overlap.posicao] = peca.valor;
+
+    } else {
+        peca.x = posPecas[peca.posicao][0];
+        peca.y = posPecas[peca.posicao][1];
+
+        placeholders.forEach(function (placeholder) {
+            if (placeholder.peca == peca) {
+                placeholder.peca = undefined;
+                rodada.entradaArr[placeholder.posicao] = undefined;
+            }
+        });
+    }
+
+    console.log(rodada.entradaArr);
+
+    //checa se já está completado e se já ganhou
+    var cont = 0;
+    rodada.entradaArr.forEach(function (item) {
+        if (item != undefined) {
+            cont++;
+        }
+    });
+
+    if (cont == 3) {
+
+        for (x = 0; x <= 2; x++) {
+            game.add.tween(respostas).to({
+                alpha: 0.8
+            }, 200, Phaser.Easing.Linear.None, true);
+
+            if (Array.from(rodada.entradaArr)[x] == Array.from(rodada.corretoArr)[x]) {
+                respostas.getAt(x).frame = 0;
+               
+            }else{
+                respostas.getAt(x).frame = 1;
+            }
+        }
+
+        if (rodada.entradaArr.toString() == rodada.corretoArr.toString()) {
+            sounds.play('parabens');
+            setTimeout(() => {
+                showGameSucessModal();
+            }, 4000);
+
+            pecas.forEach(function (peca) {
+                peca.input.draggable = false;
+            });
+
+        } else {
+            sounds.play('quepena');
+            pecas.forEach(function (peca) {
+                peca.input.draggable = false;
+            });
+            setTimeout(() => {
+                showGameOverModal();
+            }, 4000);
+        }
+    }
+
+}
+
+function criaPecas() {
+
+    var posPlaceHolders = [
+        [135, 613],
+        [349, 613],
+        [564, 614]
+    ];
+
+    placeholders = game.add.group();
+
+    for (x = 0; x <= 2; x++) {
+        var placeholder = game.add.sprite(posPlaceHolders[x][0], posPlaceHolders[x][1], 'placeholder');
+        placeholder.scale.setTo(0.8, 0.8);
+        placeholder.posicao = x;
+        placeholder.anchor.setTo(0.5, 0.5);
+        placeholder.ocupado = undefined;
+        placeholder.alpha = 0;
+        placeholders.add(placeholder);
+    }
+
+    pecas = game.add.group();
+
+    posPecas = [
+        [155, 265],
+        [335, 265],
+        [515, 265]
+    ];
+
+    arrayCombinacoes = shuffle(arrayCombinacoes);
+    for (x = 0; x <= 2; x++) {
+        var peca = game.add.sprite(posPecas[x][0], posPecas[x][1], 'grupo' + arrayRodadas[rodadaAtual] + '_' + arrayCombinacoes[x]);
+        peca.posicao = x;
+        peca.valor = arrayCombinacoes[x];
+        peca.scale.setTo(0.9, 0.9);
+        peca.frame = 1;
+        peca.anchor.set(0.5);
+        pecas.add(peca);
+        text = game.add.text(0, 0, peca.valor, {
+            fill: "#fff",
+        });
+        text.alpha = 0;
+        peca.addChild(text);
+    }
+
+    pecas.forEach(function (peca) {
+        peca.inputEnabled = true;
+        peca.input.enableDrag(true);
+        peca.events.onDragStop.add(pecaSolta, this);
+        peca.events.onDragStart.add(function () {
+            game.add.tween(peca.scale).to({
+                x: 0.85,
+                y: 0.85
+            }, 200, Phaser.Easing.Linear.None, true);
+        }, this);
+    });
+
+    respostas = game.add.group();
+
+    for (x = 0; x <= 2; x++) {
+        var resposta = game.add.sprite(posPlaceHolders[x][0], posPlaceHolders[x][1], 'resposta');
+        resposta.anchor.setTo(0.5, 0.5);
+        respostas.add(resposta);
+    }
+    respostas.alpha = 0;
+}
+
+function checkPlaceholderOverlap(peca) {
+
+    var x = false;
+    placeholders.forEach(function (e) {
+        if (!x) {
+            if (Phaser.Rectangle.intersects(peca, e)) {
+                overlapControl = true;
+                placeOverlaped = e;
+                x = true;
+            } else {
+                overlapControl = false;
+                x = false;
+            }
+        }
+    });
+
+    console.log(overlapControl)
+    if (overlapControl) {
+        return placeOverlaped;
+    } else {
+        return false;
+    }
+
+}
+config = {
+    sounds: true
+}
+
+var sounds = {
+    gen: function () {
+        if (config.sounds) {
+            this.encaixe = game.add.audio('encaixe');
+            this.musicajogo = game.add.audio('musicajogo');
+            this.parabens = game.add.audio('parabens');
+            this.quepena = game.add.audio('quepena');
+            this.ultimafase = game.add.audio('ultimafase');
+        }
+    },
+
+    play: function (id) {
+        if (config.sounds) {
+            switch (id) {
+
+                case 'encaixe':
+                    this.encaixe.play();
+                    break;
+
+                case 'ultimafase':
+                    this.ultimafase.play();
+                    break;
+
+                case 'musicajogo':
+                    this.musicajogo.play();
+                    break;
+
+                case 'quepena':
+                    this.quepena.play();
+                    break;
+
+
+                case 'parabens':
+                    this.parabens.play();
+                    break;
+            }
+        } else {
+            return false;
+        }
+    }
+}
+var gameModal = gameModal || {};
+
+gameModal = function(game) {
+    var _this = this;
+    game.modals = {};
+
+    /**
+     * [hideModal description]
+     * @param  {[type]} type [description]
+     * @return {[type]}      [description]
+     */
+    this.hideModal = function(type) {
+        window.console.log(type);
+        game.modals[type].visible = false;
+    };
+
+    return {
+        createModal: function(options) {
+            var type = options.type || ''; // must be unique
+            var includeBackground = options.includeBackground; // maybe not optional
+            var backgroundColor = options.backgroundColor || "0x000000";
+            var backgroundOpacity = options.backgroundOpacity === undefined ?
+                0.7 : options.backgroundOpacity;
+            var modalCloseOnInput = options.modalCloseOnInput || false;
+            var modalBackgroundCallback = options.modalBackgroundCallback || false;
+            var vCenter = options.vCenter || true;
+            var hCenter = options.hCenter || true;
+            var itemsArr = options.itemsArr || [];
+            var fixedToCamera = options.fixedToCamera || false;
+            var animation = options.animation || false;
+
+            var modal;
+            var modalGroup = game.add.group();
+
+            if (fixedToCamera === true) {
+                modalGroup.fixedToCamera = true;
+                modalGroup.cameraOffset.x = 0;
+                modalGroup.cameraOffset.y = 0;
+            }
+
+            if (includeBackground === true) {
+                modal = game.add.graphics(game.width, game.height);
+                modal.beginFill(backgroundColor, backgroundOpacity);
+                modal.x = 0;
+                modal.y = 0;
+
+                modal.drawRect(0, 0, game.width, game.height);
+
+                if (modalCloseOnInput === true) {
+
+                    var innerModal = game.add.sprite(0, 0);
+                    innerModal.inputEnabled = true;
+                    innerModal.width = game.width;
+                    innerModal.height = game.height;
+                    innerModal.type = type;
+                    innerModal.input.priorityID = 0;
+                    innerModal.events.onInputDown.add(function(e, pointer) {
+                        this.hideModal(e.type);
+                    }, _this, 2);
+
+                    modalGroup.add(innerModal);
+                } else {
+
+                    modalBackgroundCallback = true;
+                }
+            }
+
+            if(animation){
+                modalGroup.animation = animation;
+            }else{
+                modalGroup.animation = false;
+            }
+
+            if (modalBackgroundCallback) {
+                var _innerModal = game.add.sprite(0, 0);
+                _innerModal.inputEnabled = true;
+                _innerModal.width = game.width;
+                _innerModal.height = game.height;
+                _innerModal.type = type;
+                _innerModal.input.priorityID = 0;
+
+                modalGroup.add(_innerModal);
+            }
+
+            if (includeBackground) {
+                modalGroup.add(modal);
+            }
+
+            var modalLabel;
+            for (var i = 0; i < itemsArr.length; i += 1) {
+                var item = itemsArr[i];
+                var itemType = item.type || 'text';
+                var itemColor = item.color || 0x000000;
+                var itemFontfamily = item.fontFamily || 'Arial';
+                var itemFontSize = item.fontSize || 32;
+                var itemStroke = item.stroke || '0x000000';
+                var itemStrokeThickness = item.strokeThickness || 0;
+                var itemAlign = item.align || 'center';
+                var offsetX = item.offsetX || 0;
+                var offsetY = item.offsetY || 0;
+                var contentScale = item.contentScale || 1;
+                var content = item.content || "";
+                var centerX = game.width / 2;
+                var centerY = game.height / 2;
+                var callback = item.callback || false;
+                var textAlign = item.textAlign || "left";
+                var atlasParent = item.atlasParent || null;
+                var buttonHover = item.buttonHover || content;
+                var buttonActive = item.buttonActive || content;
+                var graphicColor = item.graphicColor || 0xffffff;
+                var graphicOpacity = item.graphicOpacity || 1;
+                var graphicW = item.graphicWidth || 200;
+                var graphicH = item.graphicHeight || 200;
+                var graphicRadius = item.graphicRadius || 0;
+                var lockPosition = item.lockPosition || false;
+                var alpha = item.alpha == 0 ? 0 : 1;
+
+                var itemAnchor = item.anchor || { x: 0, y: 0 };
+                var itemAngle = item.angle || 0;
+                var itemX = item.x || 0;
+                var itemY = item.y || 0;
+                var imageFrame = item.frame || null;
+                var tileSpriteWidth = item.tileSpriteWidth || game.width;
+                var tileSpriteHeight = item.tileSpriteHeight || game.height;
+
+                modalLabel = null;
+
+                if (itemType === "text" || itemType === "bitmapText") {
+
+                    if (itemType === "text") {
+                        modalLabel = game.add.text(0, 0, content, {
+                            font: itemFontSize + 'px ' + itemFontfamily,
+                            fill: "#" + String(itemColor).replace("0x", ""),
+                            stroke: "#" + String(itemStroke).replace("0x", ""),
+                            strokeThickness: itemStrokeThickness,
+                            align: itemAlign
+                        });
+                        modalLabel.contentType = 'text';
+                        modalLabel.update();
+                        modalLabel.x = ((game.width / 2) - (modalLabel.width / 2)) + offsetX;
+                        modalLabel.y = ((game.height / 2) - (modalLabel.height / 2)) + offsetY;
+                    } else {
+                        modalLabel = game.add.bitmapText(0, 0, itemFontfamily, String(content), itemFontSize);
+                        modalLabel.contentType = 'bitmapText';
+                        modalLabel.align = textAlign;
+                        modalLabel.updateText();
+                        modalLabel.x = (centerX - (modalLabel.width / 2)) + offsetX;
+                        modalLabel.y = (centerY - (modalLabel.height / 2)) + offsetY;
+                    }
+
+                } else if (itemType === "image") {
+                    modalLabel = game.add.image(0, 0, content);
+                    modalLabel.scale.setTo(contentScale, contentScale);
+                    modalLabel.contentType = 'image';
+                    modalLabel.x = (centerX - ((modalLabel.width) / 2)) + offsetX;
+                    modalLabel.y = (centerY - ((modalLabel.height) / 2)) + offsetY;
+                } else if (itemType === "tileSprite") {
+                    modalLabel = game.add.tileSprite(itemX, itemY,
+                        tileSpriteWidth, tileSpriteHeight, content, imageFrame);
+                    modalLabel.scale.setTo(contentScale, contentScale);
+                    modalLabel.anchor.setTo(itemAnchor.x, itemAnchor.y);
+                    modalLabel.angle = itemAngle;
+                    modalLabel.contentType = 'tileSprite';
+                } else if (itemType === "sprite") {
+
+                    if(atlasParent){
+                        modalLabel = game.add.sprite(0, 0, atlasParent, content);
+                    }else{
+                        modalLabel = game.add.sprite(0,0,content);
+                        modalLabel.frame = imageFrame;
+                    }
+                    modalLabel.scale.setTo(contentScale, contentScale);
+                    modalLabel.contentType = 'sprite';
+                    modalLabel.x = (centerX - ((modalLabel.width) / 2)) + offsetX;
+                    modalLabel.y = (centerY - ((modalLabel.height) / 2)) + offsetY;
+                    modalLabel.alpha = alpha;
+                } else if (itemType === "button") {
+                    modalLabel = game.add.button(0, 0, atlasParent, callback,
+                        this, buttonHover, content, buttonActive, content);
+                    modalLabel.scale.setTo(contentScale, contentScale);
+                    modalLabel.contentType = 'button';
+                    modalLabel.x = (centerX - ((modalLabel.width) / 2)) + offsetX;
+                    modalLabel.y = (centerY - ((modalLabel.height) / 2)) + offsetY;
+
+                } else if (itemType === "graphics") {
+                    modalLabel = game.add.graphics(graphicW, graphicH);
+                    modalLabel.beginFill(graphicColor, graphicOpacity);
+                    if (graphicRadius <= 0) {
+                        modalLabel.drawRect(0, 0, graphicW, graphicH);
+                    } else {
+                        modalLabel.drawRoundedRect(0, 0, graphicW, graphicH, graphicRadius);
+                    }
+                    modalLabel.endFill();
+                    modalLabel.x = (centerX - ((modalLabel.width) / 2)) + offsetX;
+                    modalLabel.y = (centerY - ((modalLabel.height) / 2)) + offsetY;
+
+                }else if (itemType === "video") {
+                    var video = game.add.video(content);
+                    modalLabel = game.add.sprite(0,0, video);
+                    modalLabel.video = video;
+                    modalLabel.scale.setTo(contentScale, contentScale);
+                    modalLabel.contentType = 'video';
+                    modalLabel.x = (centerX - ((modalLabel.width) / 2)) + offsetX;
+                    modalLabel.y = (centerY - ((modalLabel.height) / 2)) + offsetY;
+                }
+                
+                modalLabel["_offsetX"] = 0;
+                modalLabel["_offsetY"] = 0;
+                modalLabel.lockPosition = lockPosition;
+                modalLabel._offsetX = offsetX;
+                modalLabel._offsetY = offsetY;
+
+
+                if (callback !== false && itemType !== "button") {
+                    modalLabel.inputEnabled = true;
+                    modalLabel.pixelPerfectClick = true;
+                    modalLabel.priorityID = 10;
+                    modalLabel.events.onInputDown.add(callback, modalLabel);
+                }
+
+                if (itemType !== "bitmapText" && itemType !== "graphics") {
+                    modalLabel.bringToTop();
+                    modalGroup.add(modalLabel);
+                    modalLabel.bringToTop();
+                    modalGroup.bringToTop(modalLabel);
+                } else {
+                    modalGroup.add(modalLabel);
+                    modalGroup.bringToTop(modalLabel);
+                }
+            }
+
+            modalGroup.visible = false;
+            game.modals[type] = modalGroup;
+
+        },
+        updateModalValue: function(value, type, index, id) {
+            var item;
+            if (index !== undefined && index !== null) {
+                item = game.modals[type].getChildAt(index);
+            } else if (id !== undefined && id !== null) {
+
+            }
+
+            if (item.contentType === "text") {
+                item.text = value;
+                item.update();
+                if (item.lockPosition === true) {
+
+                } else {
+                    item.x = ((game.width / 2) - (item.width / 2)) + item._offsetX;
+                    item.y = ((game.height / 2) - (item.height / 2)) + item._offsetY;
+                }
+            } else if (item.contentType === "bitmapText") {
+                item.text = value;
+                item.updateText();
+                if (item.lockPosition === true) {
+
+                } else {
+                    item.x = ((game.width / 2) - (item.width / 2)) + item._offsetX;
+                    item.y = ((game.height / 2) - (item.height / 2)) + item._offsetY;
+                }
+            } else if (item.contentType === "image") {
+                item.loadTexture(value);
+            }
+             else if (item.contentType === "sprite") {
+                item.frame = value;
+            }else if (item.contentType == 'video'){
+                item.video.changeSource(value);
+                item.video.loop = true;
+            }
+
+        },
+        getModalItem: function(type, index) {
+            return game.modals[type].getChildAt(index);
+        },
+        showModal: function(type) {
+            var modal = game.modals[type]; //save the current modal (just for work faster)
+            modal.x = game.camera.x; //world bounds game camera fix
+            
+            game.world.bringToTop(modal);
+            modal.visible = true;
+            
+            //if there is a video label, start it
+            for(x = 0; x <= modal.length -1 ; x++){
+                var e = modal.getChildAt(x)
+                    if(e.contentType == 'video'){
+                        e.video.play(true);
+                }
+            }
+
+             // if the game is paused the animations dont work, so we'll test and manipulate it to make the animation and after, pause back. its easier than create other timer.
+             var paused = game.paused;
+             if(paused){
+                 game.paused = false;
+             }
+             // default animations here, you can add more
+             var animationDelay = 200;
+             switch(modal.animation){
+                case 'fade':
+                    modal.alpha = 0;
+                    game.add.tween(modal).to({
+                        alpha: 1
+                    }, animationDelay, Phaser.Easing.Linear.None, true, 0);
+                    break;
+
+                case 'scale':
+                    modal.scale.setTo(0,0);
+                    game.add.tween(modal.scale).to({
+                        x: 1,
+                        y: 1
+                    }, animationDelay, Phaser.Easing.Linear.None, true, 0);
+                    break;
+            }
+
+            setTimeout(function(){
+                if(paused){ //if the game was paused we'll pause it back when the animation over
+                    game.paused = true;
+                } 
+            },animationDelay + 20);
+
+        },
+        hideModal: function(type) {
+            var modal = game.modals[type]; //save the current modal (just for work faster)
+
+             //if there is a video label, stop it
+             for(x = 0; x <= modal.length -1 ; x++){
+                var e = modal.getChildAt(x)
+                if(e.contentType == 'video'){
+                    e.video.stop(true);
+                }
+            }
+
+            // default animations here, you can add more
+            var animationDelay = 200;
+            switch(modal.animation){
+                case 'fade':
+                    game.add.tween(modal).to({
+                        alpha: 0
+                    }, animationDelay, Phaser.Easing.Linear.None, true, 0);
+                    break;
+
+                case 'scale':
+                    game.add.tween(modal.scale).to({
+                        x: 0,
+                        y: 0
+                    }, animationDelay, Phaser.Easing.Linear.None, true, 0);
+                    break;
+
+                default: // if default will just make invisible
+                    modal.visible = false;
+                    break; 
+            }
+
+            if(modal.animation){ //if animating, wait the animation over to hide
+                setTimeout(function(){
+                    modal.visible = false;
+                },animationDelay + 40);
+            }
+        },
+        destroyModal: function(type) {
+            game.modals[type].destroy();
+            delete game.modals[type];
+        }
+    };
+};
+/**
+ * PHASETIPS is a tooltip plugin for Phaser.io HTML5 game framework
+ *
+ * COPYRIGHT-2015
+ * AUTHOR: MICHAEL DOBEKIDIS (NETGFX.COM)
+ *
+ **/
+
+var Phasetips = function(localGame, options) {
+
+    var _this = this;
+    var _options = options || {};
+    var game = localGame || game; // it looks for a game object or falls back to the global one
+
+    this.printOptions = function() {
+        window.console.log(_options);
+    };
+
+    this.onHoverOver = function() {
+        if (_this.tweenObj) {
+            _this.tweenObj.stop();
+        }
+        if (_options.animation === "fade") {
+            _this.tweenObj = game.add.tween(_this.mainGroup).to({
+                alpha: 1
+            }, _options.animationSpeedShow, Phaser.Easing.Linear.None, true, _options.animationDelay, 0, false);
+        } else if (_options.animation === "slide") {
+
+        } else if (_options.animation === "grow") {
+
+            _this.mainGroup.pivot.setTo(_this.mainGroup.width / 2, _this.mainGroup.height);
+            _this.mainGroup.pivot.setTo(_this.mainGroup.width / 2, _this.mainGroup.height);
+            _this.mainGroup.x = _this.mainGroup.initialX + _this.mainGroup.width / 2;
+            _this.mainGroup.y = _this.mainGroup.initialY + _this.mainGroup.height;
+            _this.mainGroup.scale.setTo(0, 0);
+            _this.mainGroup.alpha = 1;
+            _this.tweenObj = game.add.tween(_this.mainGroup.scale).to({
+                x: 1,
+                y: 1
+            }, _options.animationSpeedShow, Phaser.Easing.Linear.None, true, _options.animationDelay, 0, false);
+        } else {
+            _this.mainGroup.visible = true;
+            _this.mainGroup.alpha = 1;
+        }
+
+        if (_options.onHoverCallback) {
+            _options.onHoverCallback(_this);
+        }
+    };
+
+    this.onHoverOut = function() {
+        if (_this.tweenObj) {
+            _this.tweenObj.stop();
+        }
+
+        if (_options.animation === "fade") {
+            _this.tweenObj = game.add.tween(_this.mainGroup).to({
+                alpha: 0
+            }, _options.animationSpeedHide, Phaser.Easing.Linear.None, true, 0, 0, false);
+        } else {
+            _this.mainGroup.alpha = 0;
+        }
+
+        if (_options.onOutCallback) {
+            _options.onOutCallback(_this);
+        }
+    };
+
+    this.createTooltips = function() {
+
+        // layout
+        var _width = _options.width || "auto";
+        var _height = _options.height || "auto";
+        var _x = _options.x === undefined ? "auto" : _options.x;
+        var _y = _options.y === undefined ? "auto" : _options.y;
+        var _padding = _options.padding === undefined ? 20 : _options.padding;
+        var _positionOffset = _options.positionOffset === undefined ? 20 : _options.positionOffset;
+        var _bgColor = _options.backgroundColor || 0x000000;
+        var _strokeColor = _options.strokeColor || 0xffffff;
+        var _strokeWeight = _options.strokeWeight || 2;
+        var _customArrow = _options.customArrow || false;
+        var _enableCursor = _options.enableCursor || false;
+        var _customBackground = _options.customBackground || false;
+        var _fixedToCamera = _options.fixedToCamera || false;
+        // Option for rounded corners
+        var _roundedCornersRadius = _options.roundedCornersRadius || 1;
+        // Option for font style
+        var _font = _options.font || '';
+        var _fontSize = _options.fontSize || 12;
+        var _fontFill = _options.fontFill || "#ffffff";
+        var _fontStroke = _options.fontStroke || "#1e1e1e";
+        var _fontStrokeThickness = _options.fontStrokeThickness || 1;
+        var _fontWordWrap = _options.fontWordWrap || true;
+        var _fontWordWrapWidth = _options.fontWordWrapWidth || 200;
+        // Text style properties
+        var _textStyle = _options.textStyle || {
+            font: _font,
+            fontSize: _fontSize,
+            fill: _fontFill,
+            stroke: _fontStroke,
+            strokeThickness: _fontStrokeThickness,
+            wordWrap: _fontWordWrap,
+            wordWrapWidth: _fontWordWrapWidth
+        };
+
+        //
+        var _position = _options.position || "top"; // top, bottom, left, right, auto(?)
+        var _animation = _options.animation || "fade"; // fade, slide, grow, none to manually show it
+        var _animationDelay = _options.animationDelay || 0;
+        var _content = _options.context || "Hello World"; // string, bitmapText, text, sprite, image, group
+        var _object = _options.targetObject || game; // any object
+        var _animationSpeedShow = _options.animationSpeedShow || 300;
+        var _animationSpeedHide = _options.animationSpeedHide || 200;
+        var _onHoverCallback = _options.onHoverCallback || function() {};
+        var _onOutCallback = _options.onOutCallback || function() {};
+        // If alwaysOn option is set to true, the tooltip will not fade in or out upon hover.
+        var _initialOn = _options.initialOn || false;
+
+        // If disableInputEvents option is set to true, PHASETIPS will not add input events.
+        // Use simulateOnHoverOver, simulateOnHoverOut, hideTooltip or showTooltip methods to manually control the visibility.
+        var _disableInputEvents = _options.disableInputEvents || false;
+
+        _options.animation = _animation;
+        _options.animationDelay = _animationDelay;
+        _options.animationSpeedShow = _animationSpeedShow;
+        _options.animationSpeedHide = _animationSpeedHide;
+        _options.onHoverCallback = _onHoverCallback;
+        _options.onOutCallback = _onOutCallback;
+
+        ////////////////////////////////////////////////////////////////////////////////////
+        var tooltipBG;
+        var tooltipContent;
+        var tooltipArrow;
+
+        _this.mainGroup = game.add.group();
+        var mainGroup = _this.mainGroup;
+
+        // add content first to calculate width & height in case of auto
+        var type = typeof _content;
+
+        if (type === "string" || type === "number") {
+            tooltipContent = new Phaser.Text(game, _padding / 2, _padding / 2, String(_content), _textStyle);
+            tooltipContent.lineSpacing = _textStyle.lineSpacing || 0;
+            tooltipContent.updateText();
+            tooltipContent.update();
+            tooltipContent.x = _padding / 2;
+            tooltipContent.y = _padding / 2;
+            var bounds = tooltipContent.getBounds();
+            /* window.console.log(bounds);
+             var debug = game.add.graphics(bounds.width, bounds.height);
+             debug.x = _padding/2;
+             debug.y = _padding/2;
+             debug.beginFill(0xff0000, 0.6);
+             debug.drawRect(0, 0, bounds.width, bounds.height, 1);
+             window.console.log(debug.x)*/
+        } else if (type === "object") {
+            tooltipContent = _content;
+        }
+
+        if (_width !== "auto" && _height !== "auto") {
+            mainGroup.width = _width;
+            mainGroup.height = _height;
+        } else {
+            if (_customBackground === false) {
+                mainGroup.width = tooltipContent.width + _padding;
+                mainGroup.height = tooltipContent.height + _padding;
+            } else {
+
+                if (_customBackground.width > tooltipContent.width) {
+                    mainGroup.width = _customBackground.width;
+                    mainGroup.height = _customBackground.height;
+                } else {
+                    mainGroup.width = tooltipContent.width;
+                    mainGroup.height = tooltipContent.height;
+                }
+            }
+        }
+
+        // Making it invisible
+        if(_initialOn !== true) {
+            mainGroup.alpha = 0;
+        }
+        //////////////////////
+        function updatePosition() {
+            var _origPosition = _position;
+            if (_x !== "auto" && _y !== "auto") {
+                var worldPos = _options.targetObject ? _options.targetObject.world : game.world;
+                mainGroup.x = _x;
+                mainGroup.y = _y;
+                if (_fixedToCamera == true) {
+                    mainGroup.fixedToCamera = true;
+                    mainGroup.cameraOffset.setTo(mainGroup.x, mainGroup.y);
+                }
+            } else {
+                var worldPos = _options.targetObject ? _options.targetObject.world : game.world;
+                objectX = worldPos.x || _options.targetObject.x;
+                objectY = worldPos.y || _options.targetObject.y;
+
+                // sanity check
+                if (_position === "bottom") {
+                    if (Math.round(objectY + _object.height + (_positionOffset)) + mainGroup._height > game.height) {
+                        _position = "top";
+                    }
+                } else if (_position === "top") {
+                    if (Math.round(objectY - (_positionOffset + mainGroup._height)) < 0) {
+                        _position = "bottom";
+                    }
+                }
+
+                if (_position === "top") {
+                    mainGroup.x = Math.round(objectX + ((_object.width / 2) - (mainGroup._width / 2)));
+                    mainGroup.y = Math.round(objectY - (_positionOffset + mainGroup._height));
+                } else if (_position === "bottom") {
+                    mainGroup.x = Math.round(objectX + ((_object.width / 2) - (mainGroup._width) / 2));
+                    mainGroup.y = Math.round(objectY + _object.height + (_positionOffset));
+                } else if (_position === "left") {
+                    mainGroup.x = Math.round(objectX - (_positionOffset + mainGroup._width));
+                    mainGroup.y = Math.round((objectY + _object.height / 2) - (mainGroup._height / 2));
+                    // mainGroup.scale.x = -1;
+                } else if (_position === "right") {
+                    mainGroup.x = Math.round(objectX + _object.width + _positionOffset);
+                    mainGroup.y = Math.round((objectY + _object.height / 2) - (mainGroup._height / 2));
+                }
+
+                if (_fixedToCamera == true) {
+                    mainGroup.fixedToCamera = true;
+                    mainGroup.cameraOffset.setTo(mainGroup.x, mainGroup.y);
+                }
+            }
+
+            // clone world position
+            mainGroup.initialWorldX = worldPos.x;
+            mainGroup.initialWorldY = worldPos.y;
+
+            mainGroup.initialX = mainGroup.x;
+            mainGroup.initialY = mainGroup.y;
+
+            // if the world position changes, there might be space for the tooltip
+            // to be in the original position.
+            _position = _origPosition;
+        }
+
+        updatePosition();
+
+        ///////////////////////////////////////////////////////////////////////////////////
+
+
+
+        if (_customBackground === false) {
+            /// create bg
+            tooltipBG = game.add.graphics(tooltipContent.width, tooltipContent.height);
+            tooltipBG.beginFill(_bgColor, 1);
+            tooltipBG.x = 0;
+            tooltipBG.y = 0;
+            tooltipBG.lineStyle(_strokeWeight, _strokeColor, 1);
+
+            // if roundedCornersRadius option is set to 1, drawRect will be used.
+            if( _roundedCornersRadius == 1 ) {
+                tooltipBG.drawRect(0, 0, tooltipContent.width + _padding, tooltipContent.height + _padding, 1);
+            } else {
+                tooltipBG.drawRoundedRect(0, 0, tooltipContent.width + _padding, tooltipContent.height + _padding, _roundedCornersRadius);
+            }
+        } else {
+            tooltipBG = _customBackground;
+        }
+
+        // add all to group
+        mainGroup.add(tooltipBG);
+        mainGroup.add(tooltipContent);
+        //if(debug)
+        //mainGroup.add(debug);
+
+        // add event listener
+        // if "disableInputEvents" option is set to true, the followings are ignored.
+        if(_disableInputEvents !== true) {
+            _object.inputEnabled = true;
+            if (_enableCursor) {
+                _object.input.useHandCursor = true;
+            }
+            _object.events.onInputOver.add(_this.onHoverOver, this);
+            _object.events.onInputDown.add(_this.onHoverOver, this);
+            _object.events.onInputOut.add(_this.onHoverOut, this);
+            _object.events.onInputUp.add(_this.onHoverOut, this);
+        }
+
+        mainGroup.update = function() {
+            var worldPos = _options.targetObject ? _options.targetObject.world : game.world;
+            if (worldPos.x !== mainGroup.initialWorldX) {
+                updatePosition();
+            }
+        }
+    };
+
+    this.createTooltips();
+
+    return {
+        printOptions: function() {
+            _this.printOptions();
+        },
+        updatePosition: function(x, y) {
+            _this.mainGroup.x = x;
+            _this.mainGroup.y = y;
+        },
+        destroy: function() {
+            _this.mainGroup.removeChildren();
+            _this.mainGroup.destroy();
+        },
+        hideTooltip: function() {
+            _this.mainGroup.visible = false;
+            _this.mainGroup.alpha = 0;
+        },
+        showTooltip: function() {
+            _this.mainGroup.visible = true;
+            _this.mainGroup.alpha = 1;
+        },
+        simulateOnHoverOver: function () {
+            _this.onHoverOver();
+        },
+        simulateOnHoverOut: function () {
+            _this.onHoverOut();
+        }
+    };
+};
+
+if (typeof module === "object" && typeof module.exports === "object") {
+    module.exports = Phasetips;
+}
+/**
+ * PHASE-SLIDE IS A UI SLIDER FOR PHASER.IO LIBRARY
+ *
+ * COPYWRITE-2015
+ * AUTHOR: MICHAEL DOBEKIDIS (NETGFX.COM)
+ *
+ */
+
+var phaseSlider = phaseSlider || {};
+
+
+phaseSlider = function(game) {
+
+    var _this = this;
+
+    game.phaseSlider = _this;
+    _this.game = game;
+    _this.locked = false;
+    _this.slideIndex = 0;
+    _this.slider_timer = null;
+    _this.tweenObj = {};
+
+    var chevron_left = "data:image/png;base64,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";
+
+    var chevron_right = "data:image/png;base64,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";
+
+    game.load.image("slider_chevron_left", chevron_left);
+    game.load.image("slider_chevron_right", chevron_right);
+
+    _this.goToNext = function() {
+
+        if (_this.locked === true) {
+            return false;
+        }
+
+        if (_this.options._mode === "horizontal") {
+            var finalX = _this.sliderMainGroup.x + (_this.options._width * -1);
+
+            if ((_this.slideIndex >= _this.options._objects.length - 1) && _this.options.autoAnimate === false) {
+                _this.stopSlider();
+                return false;
+            }
+
+            // animate loop
+            if (_this.options.autoAnimate === true) {
+                if (_this.slideIndex >= _this.options._objects.length - 1) {
+                    _this.slideIndex = 0;
+                    _this.sliderMainGroup.x = _this.options._x;
+                    this.locked = false;
+                    return true;
+                }
+            }
+            _this.locked = true;
+
+            _this.tweenObj = game.add.tween(_this.sliderMainGroup).to({
+                x: finalX
+            }, _this.options.animationDuration, _this.options.animationEasing, true, 0, 0, false);
+            _this.tweenObj.onComplete.add(function() {
+                this.locked = false;
+                this.slideIndex += 1;
+                if (_this.options.autoAnimate === false && this.slideIndex >= _this.options._objects.length - 1) {
+                    if (_this.options._showHandles === true) {
+                        this.sliderControlsGroup.children[0].alpha = 0;
+                    }
+                }
+
+                // enable prev
+                if (_this.options._showHandles === true) {
+                    this.sliderControlsGroup.children[1].alpha = 1;
+                }
+            }, _this);
+        } else {
+
+            var finalY;
+            if (_this.options._mode === "vertical-from-top") {
+                finalY = _this.sliderMainGroup.y + (_this.options._height);
+            } else if (_this.options._mode === "vertical-from-bottom") {
+                finalY = _this.sliderMainGroup.y + (_this.options._height * -1);
+            }
+
+            if ((_this.slideIndex >= _this.options._objects.length - 1) && _this.options.autoAnimate === false) {
+                _this.stopSlider();
+                return false;
+            }
+
+            // animate loop
+            if (_this.options.autoAnimate === true) {
+                if (_this.slideIndex >= _this.options._objects.length - 1) {
+                    _this.slideIndex = 0;
+                    _this.sliderMainGroup.y = _this.options._y;
+                    this.locked = false;
+                    return true;
+                }
+            }
+
+            _this.locked = true;
+
+            _this.tweenObj = game.add.tween(_this.sliderMainGroup).to({
+                y: finalY
+            }, _this.options.animationDuration, _this.options.animationEasing, true, 0, 0, false);
+            _this.tweenObj.onComplete.add(function() {
+                this.locked = false;
+                this.slideIndex += 1;
+
+                if (_this.options.autoAnimate === false && this.slideIndex >= _this.options._objects.length - 1) {
+                    if (_this.options._showHandles === true) {
+                        this.sliderControlsGroup.children[0].alpha = 0;
+                    }
+                }
+
+                // enable prev
+                if (_this.options._showHandles === true) {
+                    this.sliderControlsGroup.children[1].alpha = 1;
+                }
+            }, _this);
+        }
+    };
+    _this.goToPrev = function() {
+
+        if (_this.locked === true) {
+            return false;
+        }
+
+        if (_this.options._mode === "horizontal") {
+            var finalX = _this.sliderMainGroup.x + (_this.options._width);
+
+            if (_this.slideIndex <= 0 && _this.options.autoAnimate === false) {
+                _this.stopSlider();
+                return false;
+            }
+
+            _this.locked = true;
+            _this.tweenObj = game.add.tween(_this.sliderMainGroup).to({
+                x: finalX
+            }, _this.options.animationDuration, _this.options.animationEasing, true, 0, 0, false);
+            _this.tweenObj.onComplete.add(function() {
+                this.locked = false;
+                this.slideIndex -= 1;
+
+                if (this.slideIndex < 0) {
+                    this.slideIndex = 0;
+                }
+
+                if (_this.options.infiniteLoop === false && this.slideIndex <= 0) {
+                    // enable prev
+                    if (_this.options._showHandles === true) {
+                        this.sliderControlsGroup.children[1].alpha = 0;
+                    }
+                }
+
+                // enable next
+                if (_this.options._showHandles === true) {
+                    this.sliderControlsGroup.children[0].alpha = 1;
+                }
+
+            }, _this);
+        } else {
+            var finalY;
+            if (_this.options._mode === "vertical-from-top") {
+                finalY = _this.sliderMainGroup.y + (_this.options._height * -1);
+            } else if (_this.options._mode === "vertical-from-bottom") {
+                finalY = _this.sliderMainGroup.y + (_this.options._height);
+            }
+            if (_this.slideIndex <= 0 && _this.options.autoAnimate === false) {
+                _this.stopSlider();
+                return false;
+            }
+            _this.locked = true;
+            _this.tweenObj = game.add.tween(_this.sliderMainGroup).to({
+                y: finalY
+            }, _this.options.animationDuration, _this.options.animationEasing, true, 0, 0, false);
+            _this.tweenObj.onComplete.add(function() {
+                this.locked = false;
+                this.slideIndex -= 1;
+
+                if (this.slideIndex < 0) {
+                    this.slideIndex = 0;
+                }
+
+                if (_this.options.autoAnimate === false && this.slideIndex <= 0) {
+                    if (_this.options._showHandles === true) {
+                        this.sliderControlsGroup.children[1].alpha = 0;
+                    }
+                }
+
+                // enable prev
+                if (_this.options._showHandles === true) {
+                    this.sliderControlsGroup.children[0].alpha = 1;
+                }
+            }, _this);
+        }
+    };
+
+    _this.startSlider = function() {
+        var _timer = game.time.create(false);
+        _timer.start();
+        _timer.loop(Phaser.Timer.SECOND * _this.options.animationDelay, _this.goToNext, _this);
+        _this.slider_timer = _timer;
+    };
+    _this.stopSlider = function() {
+        if (_this.slider_timer !== null) {
+            _this.slider_timer.stop(true);
+            _this.slider_timer = null;
+        } else {
+            return false;
+        }
+    };
+
+    _this.moveToSlide = function(index, animate) {
+        var finalX;
+        if (index >= _this.options._objects.length) {
+            return false;
+        }
+        if (_this.options._mode === "horizontal") {
+            finalX = (_this.options._x - (_this.options._width * (index)));
+            if (animate === true) {
+
+                var tweenObj = game.add.tween(_this.sliderMainGroup).to({
+                    x: finalX
+                }, _this.options.animationDuration, _this.options.animationEasing, true, 0, 0, false);
+            } else {
+                _this.sliderMainGroup.x = finalX;
+            }
+        } else if (_this.options._mode === "vertical-from-top") {
+            //TODO: ADD VERTICAL-FROM-TOP
+        } else if (_this.options._mode === "vertical-from-bottom") {
+            //TODO: ADD VERTICAL-FROM-BOTTOM
+        }
+    };
+    /////////////////////////////////////////////////////////////////////////////////////////
+    ///
+    _this.onDragStart = function(sprite, pointer, dragX, dragY) {
+        _this.dragInit = pointer.x;
+        _this.lastDrag = pointer.x;
+    };
+
+    _this.onDragStop = function(e) {
+
+    };
+    _this.dragUpdate = function(sprite, pointer, dragX, dragY) {
+
+        var finalX = dragX; // - _this.options._x;
+        // going left
+        if (pointer.x < _this.dragInit) {
+            var diff = Math.abs(pointer.x) - Math.abs(_this.lastDrag);
+            // going right
+            if (diff < 0) {
+                finalX = _this.sliderMainGroup.x - 1;
+            } else {
+                finalX = _this.sliderMainGroup.x + 1;
+            }
+        } else {
+            var diff = Math.abs(pointer.x) - Math.abs(_this.lastDrag);
+            // going right
+            if (diff < 0) {
+                finalX = _this.sliderMainGroup.x - 1;
+            } else {
+                finalX = _this.sliderMainGroup.x + 1;
+            }
+        }
+
+        if (finalX <= (_this.options._x + (_this.options._width * (_this.options._objects.length - 2))) * -1) {
+            finalX = (_this.options._x + (_this.options._width * (_this.options._objects.length - 2))) * -1;
+        } else if (finalX >= _this.options._x) {
+            finalX = _this.options._x;
+        }
+        _this.sliderMainGroup.x = finalX;
+        _this.lastDrag = pointer.x;
+    };
+
+    return {
+        createSlider: function(options) {
+            // initialize index
+            _this.slideIndex = 0;
+
+            _this.options = {
+                _mode: options.mode || "horizontal", // horizontal, vertical-from-top, vertical-from-bottom
+                _width: options.width || 500,
+                _height: options.height || 400,
+                _animationEffect: options.animationEffect || "slide", // slide, fade, cover
+                autoAnimate: options.autoAnimate || false,
+                infiniteLoop: options.infiniteLoop || false,
+                animationDelay: options.animationDelay || 2,
+                animationDuration: options.animationDuration || 600,
+                animationEasing: options.animationEasing || Phaser.Easing.Cubic.Out, //Phaser.Easing.Linear.None,
+                _x: options.x || 0,
+                _y: options.y || 0,
+                _objects: options.objects || [], // can take: single-sprite, single-image, group
+                sliderBG: options.sliderBG || 0x35d2e0,
+                customSliderBG: options.customSliderBG || false,
+                sliderBGAlpha: options.sliderBGAlpha || 1,
+                _customHandleNext: options.customHandleNext || "",
+                _customHandlePrev: options.customHandlePrev || "",
+                _showHandles: options.showHandles == undefined ? true : options.showHandles,
+                _onPreNextCallback: options.onPreNextCallback || false,
+                _onPrePrevCallback: options.onPrePrevCallback || false,
+				_onAfterNextCallback: options.onAfterNextCallback || false,
+				_onAfterPrevCallback: options.onAfterPreCallback || false,
+                _addModal: options.modal || false,
+                _modalAlpha: options.modalAlpha || 0.7,
+                _staticElements: options.staticElements || []
+            };
+
+            //////////////////////////////////////////////////////////////////////////////////////////////
+
+            var bgRect;
+            _this._modal = {};
+            if (_this.options._addModal === true) {
+                _this._modal = game.add.graphics(game.width, game.height);
+                _this._modal.beginFill(0x000000, _this.options._modalAlpha);
+                _this._modal.x = 0;
+                _this._modal.y = 0;
+                _this._modal.inputEnabled = true;
+                _this._modal.drawRect(0, 0, _this.game.width, _this.game.height);
+            } else {
+                _this._modal = false;
+            }
+
+            //////// OBJECTS GROUP
+            ///
+            _this.sliderBGGroup = _this.game.add.group();
+            _this.sliderMainGroup = _this.game.add.group();
+            _this.sliderBGGroup.width = _this.options._width;
+            _this.sliderMainGroup.width = _this.options._width;
+            if (_this.options._mode === "horizontal") {
+                _this.sliderMainGroup.width = _this.options._width * _this.options._objects.length;
+
+                // if used as a placeholder don't make the width = 0
+                if (_this.options._objects.length === 0) {
+                    _this.sliderMainGroup.width = _this.options._width;
+                }
+            } else {
+                _this.sliderMainGroup.height = _this.options._height * _this.options._objects.length;
+
+                // if used as a placeholder don't make the height = 0
+                if (_this.options._objects.length === 0) {
+                    _this.sliderMainGroup.height = _this.options._height;
+                }
+            }
+            _this.sliderMainGroup.height = _this.options._height;
+            _this.sliderMainGroup.x = _this.options._x;
+            _this.sliderMainGroup.y = _this.options._y;
+            //
+            _this.sliderBGGroup.height = _this.options._height;
+            _this.sliderBGGroup.x = _this.options._x;
+            _this.sliderBGGroup.y = _this.options._y;
+
+            /// DRAG for horizontal
+            /*var draggableSprite = _this.game.add.sprite(_this.options._x, _this.options._y);
+            draggableSprite.width = (_this.options._objects.length+5) * _this.options._width;
+            draggableSprite.height = _this.options._height;
+            draggableSprite.y = _this.options._y;
+            draggableSprite.inputEnabled = true;
+            draggableSprite.input.enableDrag();
+            draggableSprite.input.allowVerticalDrag = false;
+           // draggableSprite.input.enableSnap(_this.options._width, _this.options._height, true, true);
+            draggableSprite.events.onDragStart.add(_this.onDragStart, _this);
+            draggableSprite.events.onDragStop.add(_this.onDragStop, _this);
+            draggableSprite.events.onDragUpdate.add(_this.dragUpdate, _this);
+            _this._draggableSprite = draggableSprite;*/
+
+            /////// END OF OBJECTS GROUP
+
+            //////// CONTROLS GROUP
+            _this.sliderControlsGroup = _this.game.add.group();
+            _this.sliderControlsGroup.width = _this.options._width;
+            _this.sliderControlsGroup.height = _this.options._height;
+            _this.sliderControlsGroup.x = _this.options._x;
+            _this.sliderControlsGroup.y = _this.options._y;
+
+            //////// END OF CONTROLS GROUP
+
+            //MASK
+            var maskGraphics = game.add.graphics(0, 0);
+            maskGraphics.beginFill(0xffffff);
+            maskGraphics.drawRect(_this.options._x, _this.options._y, _this.options._width, _this.options._height);
+            _this.sliderMainGroup.mask = maskGraphics;
+
+            /// create main bg
+            if (_this.options.customSliderBG === false) {
+                bgRect = game.add.graphics(_this.options._width, _this.options._height);
+                bgRect.beginFill(_this.options.sliderBG, _this.options.sliderBGAlpha);
+                bgRect.x = _this.options._x;
+                bgRect.y = _this.options._y;
+
+                bgRect.drawRect(0, 0, _this.options._width, _this.options._height);
+                _this.sliderMainGroup.add(bgRect);
+            } else {
+                _this.sliderBGGroup.add(_this.options.customSliderBG);
+            }
+            // add controls
+            if (_this.options._showHandles === true) {
+
+                var chevronRight;
+                var chevronLeft;
+
+                if (_this.options._customHandleNext === "") {
+                    chevronRight = game.add.image(0, 0, "slider_chevron_right");
+                    chevronRight.scale.setTo(0.6, 0.6);
+                } else {
+                    chevronRight = game.add.image(0, 0, _this.options._customHandleNext);
+                }
+                chevronRight.x = _this.options._width - (chevronRight.width + 10); //_this.options._x+_this.options._width - (chevronRight.width+10);
+                chevronRight.y = (_this.options._height / 2) - chevronRight.height / 2;
+                chevronRight.inputEnabled = true;
+                chevronRight.events.onInputDown.add(function(e, pointer) {
+                    if (_this.options._onPreNextCallback) {
+                        _this.options._onPreNextCallback();
+                    }
+
+                    if (_this.tweenObj.isRunning !== true) {
+                        _this.stopSlider();
+                        _this.goToNext();
+                    }
+					
+					if (_this.options._onAfterNextCallback) {
+                        _this.options._onAfterNextCallback();
+                    }
+
+                }, _this);
+
+
+                if (_this.options._customHandlePrev === "") {
+                    chevronLeft = game.add.image(0, 0, "slider_chevron_left");
+                    chevronLeft.scale.setTo(0.6, 0.6);
+                } else {
+                    chevronLeft = game.add.image(0, 0, _this.options._customHandlePrev);
+                }
+                chevronLeft.x = 10;
+                chevronLeft.y = (_this.options._height / 2) - chevronLeft.height / 2;
+                chevronLeft.inputEnabled = true;
+                chevronLeft.events.onInputDown.add(function(e, pointer) {
+                    if (_this.options._onPrePrevCallback) {
+                        _this.options._onPrePrevCallback();
+                    }
+
+                    if (_this.tweenObj.isRunning !== true) {
+                        _this.stopSlider();
+                        _this.goToPrev();
+                    }
+					
+					if (_this.options._onAfterPrevCallback) {
+                        _this.options._onAfterPrevCallback();
+                    }
+
+                }, _this);
+
+
+
+                // if not infinite initialy hide it
+                if (_this.options.infiniteLoop === false) {
+                    chevronLeft.alpha = 0;
+                }
+            } else {
+
+            }
+
+
+            // ADDING THE BLOCKS
+            if (_this.options._objects.length > 0) {
+                var objArr = _this.options._objects.slice(0);
+                var length = Number(objArr.length);
+                for (var i = 0; i < length; i++) {
+                    var x;
+                    var y;
+                    // mode
+                    if (_this.options._mode === "horizontal") {
+                        objArr[i].x = (_this.options._width * i);
+                    } else if (_this.options._mode === "vertical-from-top") {
+                        objArr[i].y = (_this.options._height * i) * -1;
+
+                    } else if (_this.options._mode === "vertical-from-bottom") {
+                        objArr[i].y = (_this.options._height * i);
+                    }
+                    _this.sliderMainGroup.add(objArr[i]);
+                }
+                _this.options._objects = _this.sliderMainGroup.children;
+                //window.console.log(_this.options._objects.length, _this.options._objects,  _this.sliderMainGroup.children.length);
+            }
+
+
+            // ADDING STATIC ELEMENTS
+            if (_this.options._staticElements.length > 0) {
+                for (var i = 0; i < _this.options._staticElements.length; i++) {
+                    game.world.bringToTop(_this.options._staticElements[i]);
+                    _this.sliderBGGroup.add(_this.options._staticElements[i]);
+                }
+            }
+
+
+            // move the chevrons to top
+            if (_this.options._showHandles === true) {
+                _this.sliderControlsGroup.add(chevronRight);
+                _this.sliderControlsGroup.add(chevronLeft);
+            }
+
+            //////////// AUTO ANIMATE
+            if (_this.options.autoAnimate === true) {
+                _this.startSlider();
+            }
+
+        },
+        startSlider: function() {
+            _this.startSlider();
+        },
+        stopSlider: function() {
+            _this.startSlider();
+        },
+        moveToSlide: function(index, animate) {
+
+            _this.moveToSlide(index, animate);
+        },
+        goToNext: function() {
+            _this.goToNext();
+        },
+        goToPrev: function() {
+            _this.goToPrev();
+        },
+        getCurrentIndex: function() {
+            return _this.slideIndex;
+        },
+        refreshSlider: function() {
+
+        },
+        removeItemAt: function(index) {
+            _this.sliderMainGroup.removeChildAt(index);
+            _this.options._objects = _this.sliderMainGroup.children;
+        },
+        hideSlider: function() {
+            _this.sliderMainGroup.visible = false;
+            _this.sliderControlsGroup.visible = false;
+            _this.sliderBGGroup.visible = false;
+            if (_this._modal) {
+                _this._modal.visible = false;
+            }
+        },
+        showSlider: function() {
+            _this.sliderMainGroup.visible = true;
+            _this.sliderControlsGroup.visible = true;
+            _this.sliderBGGroup.visible = true;
+            if (_this._modal) {
+                _this._modal.visible = true;
+            }
+        }
+    };
+};
+
+function createModals() {
+
+    reg.modal.createModal({
+        type: "gameOverModal",
+        includeBackground: true,
+        modalCloseOnInput: false,
+        animation: 'fade',
+        itemsArr: [{
+                type: "image",
+                content: "perdeuFase",
+                offsetY: 0,
+                contentScale: 1
+            },
+            {
+                type: "image",
+                content: "tentarNovamente",
+                contentScale: 1.2,
+                offsetY: 245,
+                callback: function () {
+                    game.paused = false;
+                    reg.modal.hideModal("gameOverModal");
+                    pecas.destroy();
+                    placeholders.destroy();
+                    respostas.alpha = 0;
+                    respostas.destroy();
+                    novaRodada(false);
+                    erros++;
+                    textoErros.setText(erros);
+                    sounds.play('cliqueinstrucoes');
+                }
+            },
+        ]
+    });
+
+    reg.modal.createModal({
+        type: "gameSucessModal",
+        includeBackground: true,
+        modalCloseOnInput: false,
+        animation: 'fade',
+        itemsArr: [{
+                type: "image",
+                content: "venceuFase",
+                offsetY: 0,
+                contentScale: 1
+            },
+            {
+                type: "image",
+                content: "proximoNivel",
+                contentScale: 1.2,
+                offsetY: 245,
+                offsetX: 0,
+                callback: function () {
+                    game.paused = false;
+                    reg.modal.hideModal("gameSucessModal");
+                    pecas.destroy();
+                    placeholders.destroy();
+                    respostas.alpha = 0;
+                    respostas.destroy();
+                    acertos++;
+                    novaRodada(true);
+                    textoAcertos.setText(acertos);
+                    sounds.play('cliqueinstrucoes');
+                }
+            },
+        ]
+    });
+
+    reg.modal.createModal({
+        type: "nivelSuccess",
+        includeBackground: true,
+        modalCloseOnInput: false,
+        animation: 'fade',
+        itemsArr: [{
+                type: "image",
+                content: "venceuNivel",
+                offsetY: -20,
+                contentScale: 1
+            },
+            {
+                type: "image",
+                content: "proximodesafio",
+                offsetY: 240,
+                offsetX: 70,
+                contentScale: 1.3,
+                callback: function () {
+                    game.paused = false;
+                    reg.modal.hideModal("nivelSuccess");
+                    game.state.start('levelState');
+                }
+            },
+            {
+                type: "text",
+                color: '0xFFF',
+                content: "0",
+                offsetY: 104,
+                offsetX: 200,
+            },
+            {
+                type: "text",
+                color: '0xFFF',
+                content: "0",
+                offsetY: 104,
+                offsetX: 50,
+            },
+        ]
+    })
+
+    reg.modal.createModal({
+        type: "modalSair",
+        includeBackground: true,
+        modalCloseOnInput: false,
+        animation: 'fade',
+        itemsArr: [{
+                type: "image",
+                content: "modalSair",
+                offsetY: -20,
+                contentScale: 1,
+            },
+            {
+                type: "image",
+                content: "sairSim",
+                offsetY: 50,
+                offsetX: 130,
+                contentScale: 0.8,
+                callback: function () {
+                    game.paused = false;
+                    game.state.start('levelState');
+                    sounds.play('cliqueinstrucoes');
+                }
+            },
+            {
+                type: "image",
+                content: "sairNao",
+                offsetY: 50,
+                offsetX: -130,
+                contentScale: 0.8,
+                callback: function () {
+                    game.paused = false;
+                    reg.modal.hideModal("modalSair");
+                    sounds.play('cliqueinstrucoes');
+                }
+            },
+        ]
+    });
+}
+
+
+function showGameOverModal() {
+    reg.modal.showModal("gameOverModal");
+}
+
+function showModalSair() {
+    game.paused = true;
+    reg.modal.showModal("modalSair");
+    btnSom.bringToTop();
+}
+
+function showNivelSuccessModal() {
+    reg.modal.showModal("nivelSuccess");
+    reg.modal.updateModalValue(acertos, 'nivelSuccess', 5);
+    reg.modal.updateModalValue(erros, 'nivelSuccess', 4);
+    sounds.play('ultimafase');
+}
+
+function showGameSucessModal() {
+    reg.modal.showModal("gameSucessModal");
+}
+
+function novaRodada(venceu) {
+    if (venceu) {
+        rodadaAtual++;
+    }
+    if (rodadaAtual != 6) {
+        rodada = {
+            corretoArr:['entrada', 'processamento', 'saida'],
+            entradaArr: [undefined, undefined, undefined]
+        };
+        criaPecas();
+        textoFase.setText(rodadaAtual+1+'/6');
+    } else {
+        levelSuccess();
+    }
+
+    if(rodadaAtual == 5){
+        sounds.play('ultima_fase');
+    }
+}
+function createGameUI() {
+	logoEditora = game.add.image(860, 730, 'logoEditora');
+	logoEditora.enableBody = true;
+	logoEditora.anchor.x = 0.5;
+	logoEditora.anchor.y = 0.5;
+    logoEditora.scale.setTo(1.1, 1.1);
+    
+    logoJogo = game.add.image(840, 120, 'logoGrande');
+	logoJogo.enableBody = true;
+	logoJogo.anchor.x = 0.5;
+	logoJogo.anchor.y = 0.5;
+    logoJogo.scale.setTo(0.6, 0.6);
+    
+    estatisticas = game.add.image(840, 362, 'estatisticas');
+	estatisticas.enableBody = true;
+	estatisticas.anchor.x = 0.5;
+    estatisticas.anchor.y = 0.5;
+    estatisticas.scale.setTo(1.1, 1.1);
+    
+    textoAcertos = game.add.text(60, 60, 0, {
+        fill: "#fff",
+        fontSize: "35px",
+        fontFamily: "Exo",
+        stroke: '#000000',
+        strokeThickness: 2
+    });
+    textoAcertos.setShadow(5, 5, 'rgba(0,0,0,0.5)', 5);
+    estatisticas.addChild(textoAcertos);
+
+    textoErros = game.add.text(50, -25, 0, {
+        fill: "#fff",
+        fontSize: "35px",
+        fontFamily: "Exo",
+        stroke: '#000000',
+        strokeThickness: 2
+    });
+    textoErros.setShadow(5, 5, 'rgba(0,0,0,0.5)', 5);
+    estatisticas.addChild(textoErros);
+
+    textoFase = game.add.text(20, -105, '1/6', {
+        fill: "#fff",
+        fontSize: "35px",
+        fontFamily: "Exo",
+        stroke: '#000000',
+        strokeThickness: 2
+    });
+    textoFase.setShadow(5, 5, 'rgba(0,0,0,0.5)', 5);
+    estatisticas.addChild(textoFase);
+
+	btnSom = game.add.button(915, 590, 'btnSom', function(){
+        if(game.sound.mute){
+			game.sound.mute = false;
+			btnSom.frame = 0;
+		}else{
+			game.sound.mute = true;
+			btnSom.frame = 1;
+        };
+        sounds.play('cliqueinstrucoes');
+    });
+    
+	btnSom.enableBody = true;
+	btnSom.anchor.x = 0.5;
+	btnSom.anchor.y = 0.5;
+	btnSom.scale.setTo(1.1, 1.1);
+
+	
+	btnClose = game.add.button(920, 660, 'btnClose', function(){
+        showModalSair();
+        sounds.play('cliqueinstrucoes');
+	});
+	btnClose.enableBody = true;
+	btnClose.anchor.x = 0.5;
+	btnClose.anchor.y = 0.5;
+    btnClose.scale.setTo(0.8, 0.8);
+    
+}
+
+function attGameUI(){
+	if (btnSom.input.pointerOver()) {
+        game.add.tween(btnSom.scale).to({
+            x: 1.2,
+            y: 1.2
+        }, 100, Phaser.Easing.Linear.None, true);
+    } else {
+        game.add.tween(btnSom.scale).to({
+            x: 1.1,
+            y: 1.1
+        }, 100, Phaser.Easing.Linear.None, true);
+    }
+
+    if (btnClose.input.pointerOver()) {
+        game.add.tween(btnClose.scale).to({
+            x: 1.1,
+            y: 1.1
+        }, 100, Phaser.Easing.Linear.None, true);
+    } else {
+        game.add.tween(btnClose.scale).to({
+            x:0.95,
+            y:0.95
+        }, 100, Phaser.Easing.Linear.None, true);
+    }
+}
+var jogoState = {
+	create: criarJogo,
+	update: atualizarJogo,
+};
+
+function criarJogo() {
+	createModals();
+	sounds.gen();
+	erros = 0;
+	acertos = 0;
+	levelNumber = 1;
+	levelType = "numeros";
+	background = game.add.sprite(0, 0, 'backgroundFase');
+	game.add.sprite(30, 60, 'fundopecas');
+	createGameUI();
+	rodadaAtual = 0;
+	arrayRodadas = shuffle(arrayRodadas);
+	novaRodada();
+
+}
+
+function atualizarJogo() {
+	attGameUI();
+}
+var preloadState = {
+    create: criarPreload,
+    preload: precarregarPreload
+}
+
+function precarregarPreload() {
+    game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
+    game.scale.pageAlignHorizontally = true;
+    game.scale.pageAlignVertically = true;
+
+    game.stage.backgroundColor = "#ffffff";
+
+    var logo = game.add.sprite(game.world.centerX, game.world.centerY - 80, 'logoPreload');
+    logo.enableBody = true;
+    logo.anchor.x = 0.5;
+    logo.anchor.y = 0.5;
+    logo.scale.setTo(0.8, 0.8);
+
+    var preloadBarBg = game.add.sprite(game.world.centerX, game.world.centerY + 40, 'preloadBarBg');
+    preloadBarBg.enableBody = true;
+    preloadBarBg.anchor.x = 0.5;
+    preloadBarBg.anchor.y = 0.5;
+
+
+    preloadBar = game.add.sprite(game.world.centerX - 170, game.world.centerY - 4 + 40, 'preloadBar');
+    this.load.setPreloadSprite(preloadBar);
+
+    game.load.image('logoGrande', 'assets/logoGrande.png');
+    game.load.image('logoEditora', 'assets/logoEditora.png');
+    game.load.spritesheet('btnSom', 'assets/btnSom.png', 60, 54);
+    game.load.spritesheet('resposta', 'assets/resposta.png', 181, 181);
+    game.load.image('btnClose', 'assets/btnClose.png');
+    game.load.image('backgroundNormal', 'assets/backgroundNormal.png');
+    game.load.spritesheet('backgroundFase', 'assets/backgroundFase.png', 1000, 800, 2);
+    game.load.image('sairSim', 'assets/sairSim.png');
+    game.load.image('sairNao', 'assets/sairNao.png');
+    game.load.image('modalSair', 'assets/modalSair.png');
+    game.load.image('venceuFase', 'assets/venceuFase.png');
+    game.load.image('perdeuFase', 'assets/perdeuFase.png');
+    game.load.image('fundoPecas', 'assets/fundoPecas.png');
+    game.load.image('tentarNovamente', 'assets/tentarNovamente.png');
+    game.load.image('proximoNivel', 'assets/proximoNivel.png');
+    game.load.image('venceuNivel', 'assets/venceuNivel.png');
+    game.load.image('proximodesafio', 'assets/proximodesafio.png');
+    game.load.image('estatisticas', 'assets/estatisticas.png');
+    game.load.image('fundopecas', 'assets/fundopecas.png');
+    game.load.image('personagem', 'assets/personagem.png');
+
+    game.load.image('grupo1_entrada', 'assets/grupo1_entrada.png');
+    game.load.image('grupo1_processamento', 'assets/grupo1_processamento.png');
+    game.load.image('grupo1_saida', 'assets/grupo1_saida.png');
+
+    game.load.image('grupo2_entrada', 'assets/grupo2_entrada.png');
+    game.load.image('grupo2_processamento', 'assets/grupo2_processamento.png');
+    game.load.image('grupo2_saida', 'assets/grupo2_saida.png');
+
+    game.load.image('grupo3_entrada', 'assets/grupo3_entrada.png');
+    game.load.image('grupo3_processamento', 'assets/grupo3_processamento.png');
+    game.load.image('grupo3_saida', 'assets/grupo3_saida.png');
+    
+    game.load.image('grupo4_entrada', 'assets/grupo4_entrada.png');
+    game.load.image('grupo4_processamento', 'assets/grupo4_processamento.png');
+    game.load.image('grupo4_saida', 'assets/grupo4_saida.png');
+
+    game.load.image('grupo5_entrada', 'assets/grupo5_entrada.png');
+    game.load.image('grupo5_processamento', 'assets/grupo5_processamento.png');
+    game.load.image('grupo5_saida', 'assets/grupo5_saida.png');
+
+    game.load.image('grupo6_entrada', 'assets/grupo6_entrada.png');
+    game.load.image('grupo6_processamento', 'assets/grupo6_processamento.png');
+    game.load.image('grupo6_saida', 'assets/grupo6_saida.png');
+
+    game.load.image('grupo7_entrada', 'assets/grupo7_entrada.png');
+    game.load.image('grupo7_processamento', 'assets/grupo7_processamento.png');
+    game.load.image('grupo7_saida', 'assets/grupo7_saida.png');
+
+    game.load.image('grupo8_entrada', 'assets/grupo8_entrada.png');
+    game.load.image('grupo8_processamento', 'assets/grupo8_processamento.png');
+    game.load.image('grupo8_saida', 'assets/grupo8_saida.png');
+
+    game.load.image('grupo8_entrada', 'assets/grupo8_entrada.png');
+    game.load.image('grupo8_processamento', 'assets/grupo8_processamento.png');
+    game.load.image('grupo8_saida', 'assets/grupo8_saida.png');
+
+    game.load.image('grupo9_entrada', 'assets/grupo9_entrada.png');
+    game.load.image('grupo9_processamento', 'assets/grupo9_processamento.png');
+    game.load.image('grupo9_saida', 'assets/grupo9_saida.png');
+
+    game.load.image('grupo10_entrada', 'assets/grupo10_entrada.png');
+    game.load.image('grupo10_processamento', 'assets/grupo10_processamento.png');
+    game.load.image('grupo10_saida', 'assets/grupo10_saida.png');
+
+    game.load.image('grupo11_entrada', 'assets/grupo11_entrada.png');
+    game.load.image('grupo11_processamento', 'assets/grupo11_processamento.png');
+    game.load.image('grupo11_saida', 'assets/grupo11_saida.png');
+
+    game.load.image('grupo12_entrada', 'assets/grupo12_entrada.png');
+    game.load.image('grupo12_processamento', 'assets/grupo12_processamento.png');
+    game.load.image('grupo12_saida', 'assets/grupo12_saida.png');
+
+    
+    game.load.image('grupo13_entrada', 'assets/grupo13_entrada.png');
+    game.load.image('grupo13_processamento', 'assets/grupo13_processamento.png');
+    game.load.image('grupo13_saida', 'assets/grupo13_saida.png');
+
+    
+    game.load.image('grupo14_entrada', 'assets/grupo14_entrada.png');
+    game.load.image('grupo14_processamento', 'assets/grupo14_processamento.png');
+    game.load.image('grupo14_saida', 'assets/grupo14_saida.png');
+
+    
+    game.load.image('grupo15_entrada', 'assets/grupo15_entrada.png');
+    game.load.image('grupo15_processamento', 'assets/grupo15_processamento.png');
+    game.load.image('grupo15_saida', 'assets/grupo15_saida.png');
+
+    game.load.image('placeholder', 'assets/placeholder.png');
+    game.load.image('btnJogar', 'assets/btnJogar.png');
+    game.load.image('btnProcura', 'assets/btnProcura.png');
+
+    game.load.audio('encaixe',['assets/sounds/encaixe.ogg', 'assets/sounds/encaixe.mp3']);
+    game.load.audio('quepena',['assets/sounds/quepena.ogg', 'assets/sounds/quepena.mp3']);
+    game.load.audio('parabens',['assets/sounds/parabens.ogg', 'assets/sounds/parabens.mp3']);
+    game.load.audio('musicajogo',['assets/sounds/musicajogo.ogg', 'assets/sounds/musicajogo.mp3']);
+    game.load.audio('ultimafase',['assets/sounds/ultimafase.ogg', 'assets/sounds/ultimafase.mp3']);
+}
+
+
+function criarPreload() {
+    game.state.start('levelState');
+}
+var bootState = { create:criarBoot, preload: precarregarBoot}
+
+function precarregarBoot() {
+    //UI elements
+    game.load.image('preloadBar', 'assets/barPreload.png');
+    game.load.image('preloadBarBg', 'assets/bgPreload.png');
+    game.load.image('logoPreload', 'assets/logoPreload.png');
+
+}
+
+function criarBoot(){
+    game.state.start('preloadState');
+}
+
+var levelState = {
+	create: criarLevelState,
+	update: atualizarLevelState,
+};
+
+soundLoop = null;
+function criarLevelState() {
+	sounds.gen();
+	createModals();
+	//gerando o bg
+	game.add.image(0, 0, 'backgroundNormal');
+
+	game.sound.stopAll();
+	sounds.play('musicajogo');
+	soundLoop = setInterval(function () {
+		sounds.play('musicajogo');
+	}, 78000);
+
+	var logo = game.add.image(game.world.centerX + 90, game.world.centerY - 70, 'logoGrande');
+	logo.enableBody = true;
+	logo.anchor.x = 0.5;
+	logo.anchor.y = 0.5;
+	logo.scale.setTo(1.3, 1.3);
+
+	var logoEditora = game.add.image(880, 60, 'logoEditora');
+	logoEditora.enableBody = true;
+	logoEditora.anchor.x = 0.5;
+	logoEditora.anchor.y = 0.5;
+	logoEditora.scale.setTo(0.8, 0.8);
+
+	btnSom = game.add.button(930, 740, 'btnSom', function(){
+		if(game.sound.mute){
+			game.sound.mute = false;
+			btnSom.frame = 0;
+		}else{
+			game.sound.mute = true;
+			btnSom.frame = 1;
+		};
+	});
+
+	btnSom.enableBody = true;
+	btnSom.anchor.x = 0.5;
+	btnSom.anchor.y = 0.5;
+	btnSom.scale.setTo(0.8, 0.8);
+
+	btnProcura = game.add.image(game.world.centerX + 80, 540, 'btnProcura');
+	btnProcura.anchor.x = 0.5;
+	btnProcura.anchor.y = 0.5;
+	btnProcura.scale.setTo(1, 1);
+
+	btnJogar = game.add.button(game.world.centerX + 80, 640, 'btnJogar', function(){
+		game.state.start('jogo');
+	});
+	btnJogar.anchor.x = 0.5;
+	btnJogar.anchor.y = 0.5;
+	btnJogar.scale.setTo(1, 1);
+	
+
+	personagem = game.add.sprite(40, 80, 'personagem');
+}
+
+function atualizarLevelState() {
+	if (btnJogar.input.pointerOver()) {
+        game.add.tween(btnJogar.scale).to({
+            x: 1.1,
+            y: 1.1
+        }, 100, Phaser.Easing.Linear.None, true);
+    } else {
+        game.add.tween(btnJogar.scale).to({
+            x: 1,
+            y: 1
+        }, 100, Phaser.Easing.Linear.None, true);
+	}
+	
+	if (btnSom.input.pointerOver()) {
+        game.add.tween(btnSom.scale).to({
+            x: 1.1,
+            y: 1.1
+        }, 100, Phaser.Easing.Linear.None, true);
+    } else {
+        game.add.tween(btnSom.scale).to({
+            x: 1,
+            y: 1
+        }, 100, Phaser.Easing.Linear.None, true);
+    }
+}
+var game;
+var reg = {};
+
+function loadgame() {
+    var screenWidth = 1000;
+    var screenHeight = 800;
+    var centerX = screenWidth / 2;
+    var centerY = screenHeight / 2;
+    game = new Phaser.Game(screenWidth, screenHeight, Phaser.CANVAS, '#game', null);
+
+    //plugins
+    reg.modal = new gameModal(game);
+
+    game.state.add('preloadState', preloadState);
+    game.state.add('bootState', bootState);
+    game.state.add('levelState', levelState);
+
+    game.state.add('jogo', jogoState);
+
+    //define estado inicial
+    game.state.start('bootState');
+}
+loadgame();
+
+function levelSuccess() {
+    showNivelSuccessModal();
+}
+
+
+function resize() {
+    var canvas = game.canvas,
+        width = window.innerWidth,
+        height = window.innerHeight;
+    var wratio = width / height,
+        ratio = canvas.width / canvas.height;
+
+    if (wratio < ratio) {
+        canvas.style.width = width + "px";
+        canvas.style.height = (width / ratio) + "px";
+    } else {
+        canvas.style.width = (height * ratio) + "px";
+        canvas.style.height = height + "px";
+    }
+}
+window.addEventListener('resize', resize);
+resize();
