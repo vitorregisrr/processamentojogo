@@ -114906,6 +114906,8 @@ function criarJogo() {
 	levelNumber = 1;
 	levelType = "numeros";
 	background = game.add.sprite(0, 0, 'backgroundFase');
+	background.width = 1050;
+	
 	game.add.sprite(30, 60, 'fundopecas');
 	createGameUI();
 	rodadaAtual = 0;
@@ -115071,7 +115073,8 @@ function criarLevelState() {
 	sounds.gen();
 	createModals();
 	//gerando o bg
-	game.add.image(0, 0, 'backgroundNormal');
+	var bg = game.add.image(0, 0, 'backgroundNormal');
+	bg.width = 1050;
 
 	game.sound.stopAll();
 	sounds.play('musicajogo');

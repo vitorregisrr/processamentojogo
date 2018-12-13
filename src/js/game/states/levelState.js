@@ -8,7 +8,8 @@ function criarLevelState() {
 	sounds.gen();
 	createModals();
 	//gerando o bg
-	game.add.image(0, 0, 'backgroundNormal');
+	var bg = game.add.image(0, 0, 'backgroundNormal');
+	bg.width = 1050;
 
 	game.sound.stopAll();
 	sounds.play('musicajogo');
